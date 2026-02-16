@@ -25,8 +25,8 @@ client = carla.Client('localhost', 2000)
 client.set_timeout(10.0)
 world = client.get_world()
 debug = world.debug
+risk_detected_vehicles = set()
 
-# --- REAL TIME PREDICTION ---
 print("AI monitoring risks...")
 
 try:
@@ -39,10 +39,14 @@ try:
             # If risk detected, show a visual alert
             if risk == 1:
                 loc = v.get_transform().location
-                debug.draw_arrow(loc + carla.Location(z=2), loc + carla.Location(z=5), 
+                debug.draw_arrow(loc + carla.Location(z=5), loc + carla.Location(z=2), 
                                  thickness=0.2, arrow_size=0.3, 
                                  color=carla.Color(255, 0, 0), life_time=0.1)
-                print(f"AI ALERT: Possible incident in vehicle {v.id}")
+                if v.id not in risk_detected_vehicles:
+                    risk_detected_vehicles.add(v.id)
+                    print(f"AI ALERT: Possible incident in vehicle {v.id}")
+            elif risk == 0 and v.id in risk_detected_vehicles:
+                risk_detected_vehicles.remove(v.id)
 
 except KeyboardInterrupt:
     print("\nAI analysis stopped.")
