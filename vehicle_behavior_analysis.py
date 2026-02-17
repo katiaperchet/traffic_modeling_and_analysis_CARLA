@@ -4,6 +4,8 @@ import numpy as np
 import joblib
 from sklearn.ensemble import RandomForestClassifier
 import pandas as pd
+import init_main_map as map_tool
+import random
 
 try:
     model = joblib.load('traffic_aimodel.pkl')
@@ -23,7 +25,26 @@ def asses_risk(v, ai_model):
 
 client = carla.Client('localhost', 2000)
 client.set_timeout(10.0)
-world = client.get_world()
+world = map_tool.initialize_world(client)
+#map_tool.set_bad_weather(world)
+#map_tool.spawn_pedestrians(client, world, 50)
+map_tool.center_camera(world)
+tm = client.get_trafficmanager(8000)
+tm.set_global_distance_to_leading_vehicle(1.5)
+bp_library = world.get_blueprint_library()
+blueprints = bp_library.filter('vehicle.*')
+collision_bp = bp_library.find('sensor.other.collision')
+
+spawn_points = world.get_map().get_spawn_points()
+random.shuffle(spawn_points)
+
+for i in range(min(45, len(spawn_points))):
+    bp = random.choice(blueprints)
+    vehicle = world.try_spawn_actor(bp, spawn_points[i])
+    if vehicle:
+        vehicle.set_autopilot(True, 8000)
+        tm.vehicle_percentage_speed_difference(vehicle, 30.0)
+
 debug = world.debug
 risk_detected_vehicles = set()
 
