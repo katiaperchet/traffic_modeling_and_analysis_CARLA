@@ -1,120 +1,110 @@
 import carla
 import time
 import math
-import random
 import pandas as pd
 import os
-import init_main_map as map_tool  
+import datetime
 
-OUTPUT_FILE = '.\\DataCSV\\dataset_collisions.csv'
-DURATION_SIM = 180
-NUM_VEHICLES = 45
+OUTPUT_DIR = ".\\DataCSV"
+DURATION_SIM = 180  
+SAMPLING_INTERVAL = 0.5 
+
 collisions_registered = {}
-collisioned_vehicles= set()
+collisioned_vehicles = set()
 
 def collision_callback(event, dict_collisions):
-
-    if event.actor.id not in collisioned_vehicles:
-        actor = event.actor
-        dict_collisions[event.actor.id] = True
-        actor.set_autopilot(False)
-        control = carla.VehicleControl()
-        control.steer = 0.0
-        control.throttle = 0.0
-        control.brake = 1.0
-        control.hand_brake = True
-        actor.apply_control(control)
-        collisioned_vehicles.add(event.actor.id)
-        print(f"Vehicle {actor.id} crashed and stopped")
+    actor_id = event.actor.id
+    if actor_id not in collisioned_vehicles:
+        dict_collisions[actor_id] = True
+        collisioned_vehicles.add(actor_id)
+        print(f" >>> [COLISIÓN] ID: {actor_id}")
 
 def main():
     client = carla.Client('localhost', 2000)
     client.set_timeout(60.0)
+    
+    timestamp_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_file = os.path.join(OUTPUT_DIR, f'dataset_collisions_{timestamp_str}.csv')
 
     vehicles_list = []
     sensors_list = []
     data_log = []
 
     try:
-        world = map_tool.initialize_world(client)
-        map_tool.center_camera(world)
-        tm = client.get_trafficmanager(8000)
-        tm.set_global_distance_to_leading_vehicle(1.5)
+        world = client.get_world()
+        print("----------------------------------------------------------")
+        print("STATUS: Waiting for ScenarioRunner vehicles...")
 
-        bp_library = world.get_blueprint_library()
-        blueprints = bp_library.filter('vehicle.*')
-        collision_bp = bp_library.find('sensor.other.collision')
+        while True:
+            existing_vehicles = world.get_actors().filter('vehicle.*')
+            if len(existing_vehicles) > 0:
+                vehicles_list = list(existing_vehicles)
+                break
+            time.sleep(0.5)
+        
+        print(f"STATUS: {len(vehicles_list)} detected vehicles. Connecting sensors...")
 
-        spawn_points = world.get_map().get_spawn_points()
-        random.shuffle(spawn_points)
-        print(f"Spawning {NUM_VEHICLES} vehicles with collision sensors...")
+        collision_bp = world.get_blueprint_library().find('sensor.other.collision')
+        for vehicle in vehicles_list:
+            col_sensor = world.spawn_actor(collision_bp, carla.Transform(), attach_to=vehicle)
+            col_sensor.listen(lambda event: collision_callback(event, collisions_registered))
+            sensors_list.append(col_sensor)
 
-        for i in range(min(NUM_VEHICLES, len(spawn_points))):
-            bp = random.choice(blueprints)
-            vehicle = world.try_spawn_actor(bp, spawn_points[i])
-
-            if vehicle:
-                vehicle.set_autopilot(True, 8000)
-                tm.vehicle_percentage_speed_difference(vehicle, 30.0)
-                vehicles_list.append(vehicle)
-                col_sensor = world.spawn_actor(collision_bp, carla.Transform(), attach_to=vehicle)
-                col_sensor.listen(lambda event, v_id=vehicle.id: collision_callback(event, collisions_registered))
-                sensors_list.append(col_sensor)
-        print(f"Recording started. Duration: {DURATION_SIM}s")
-
+        print(f"STATUS: Recording in {output_file}...")
         start_time = time.time()
-        sampling_interval= 0.5
-        last_record_time=0
+        last_record_time = 0
 
         while True:
             elapsed_time = time.time() - start_time
+            
             if elapsed_time > DURATION_SIM:
+                print("INFO: Simulation recording time reached.")
                 break
+
+            active_vehicles = [v for v in vehicles_list if v.is_alive]
+            if not active_vehicles:
+                print("INFO: Vehicles not detected. Closing register...")
+                break
+
             world.wait_for_tick()
 
-            if elapsed_time - last_record_time >= sampling_interval:
-                for v in vehicles_list:
-                    if v.is_alive:
-                        transform = v.get_transform()
-                        loc = transform.location
-
-                        if loc.z < -0.5:
-                            waypoint = world.get_map().get_waypoint(loc, project_to_road=True)
-                            new_loc = waypoint.transform.location + carla.Location(z=1.0)
-                            v.set_transform(carla.Transform(new_loc, waypoint.transform.rotation))
-                            v.set_target_velocity(carla.Vector3D(0, 0, 0))
-                            print(f"Vehicle {v.id} rescued from void.")
-                        vel = v.get_velocity()
-                        speed_kmh = 3.6 * math.sqrt(vel.x**2 + vel.y**2 + vel.z**2)
-                        control = v.get_control()
-                        collision_detected = 1 if v.id in collisions_registered else 0
-                        data_log.append({
-                            'timestamp': elapsed_time,
-                            'v_id': v.id,
-                            'x': loc.x,
-                            'y': loc.y,
-                            'speed_kmh': speed_kmh,
-                            'throttle': control.throttle,
-                            'brake': control.brake,
-                            'steer': control.steer,
-                            'collision': collision_detected
-                        })
+            if elapsed_time - last_record_time >= SAMPLING_INTERVAL:
+                for v in active_vehicles:
+                    transform = v.get_transform()
+                    loc = transform.location
+                    vel = v.get_velocity()
+                    speed_kmh = 3.6 * math.sqrt(vel.x**2 + vel.y**2 + vel.z**2)
+                    control = v.get_control()
+                    
+                    data_log.append({
+                        'timestamp': round(elapsed_time, 2),
+                        'v_id': v.id,
+                        'x': round(loc.x, 2),
+                        'y': round(loc.y, 2),
+                        'speed_kmh': round(speed_kmh, 2),
+                        'collision': 1 if v.id in collisions_registered else 0
+                    })
                 last_record_time = elapsed_time
-                collisions_registered.clear()
-        print("Simulation finished. Saving data...")
-        os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
 
-        df = pd.DataFrame(data_log)
-        df.to_csv(OUTPUT_FILE, index=False)
-        print(f"Data successfully saved in {OUTPUT_FILE}")
     except Exception as e:
-        print(f"Critical error during recording: {e}")
+        print(f"ERROR: {e}")
+    
     finally:
-        print("Cleaning up actors...")
+        if data_log:
+            print("----------------------------------------------------------")
+            print("STATUS: Saving data in CSV...")
+            os.makedirs(OUTPUT_DIR, exist_ok=True)
+            df = pd.DataFrame(data_log)
+            df.to_csv(output_file, index=False)
+            print(f"SUCESS: File saved and closed: {output_file}")
+        else:
+            print("WARNING: No data was generated to save.")
+
+        print("STATUS: Cleaning sensors...")
         for s in sensors_list:
             if s.is_alive:
                 s.destroy()
-        client.apply_batch([carla.command.DestroyActor(x.id) for x in vehicles_list])
-        print("Cleanup complete.")
+        print("DONE.")
+
 if __name__ == "__main__":
     main()
