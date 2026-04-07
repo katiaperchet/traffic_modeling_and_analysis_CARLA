@@ -7,7 +7,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 import joblib
 
-df = pd.read_csv('.\\DataCSV\\dataset_vehicles_enriched.csv')
+df = pd.read_csv('.\\DataCSV\\dataset_vehicles_enriched_MASTER.csv')
 
 features = ['speed_kmh', 'throttle', 'brake', 'steer']
 X = df[features]
@@ -18,7 +18,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 print("Training model to predict risks...")
 
 # Random Forest --- due to its precision for traffic systems
-model = RandomForestClassifier(n_estimators=100, random_state=42)
+model = RandomForestClassifier(n_estimators=100, max_depth=15, min_samples_leaf=5, random_state=42)
 model.fit(X_train, y_train)
 
 y_pred = model.predict(X_test)
