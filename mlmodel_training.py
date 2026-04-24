@@ -31,7 +31,7 @@ print(classification_report(y_test, y_pred))
 importances = model.feature_importances_
 plt.figure(figsize=(10, 6))
 sns.barplot(x=importances, y=features, palette='viridis')
-plt.title('Variables that predict better the incidents')
+plt.title('Feature Importance')
 plt.xlabel('Relative Importance')
 plt.show()
 
@@ -40,7 +40,7 @@ cm = confusion_matrix(y_test, y_pred)
 plt.figure(figsize=(8, 6))
 sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
 plt.title('Confusion Matrix: Incident Prediction')
-plt.xlabel('AI Prediction')
+plt.xlabel('RF Prediction')
 plt.ylabel('CARLA implementation')
 plt.show()
 
