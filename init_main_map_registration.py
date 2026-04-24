@@ -82,6 +82,9 @@ def main():
                         'x': round(loc.x, 2),
                         'y': round(loc.y, 2),
                         'speed_kmh': round(speed_kmh, 2),
+                        'throttle': round(control.throttle, 3), 
+                        'brake': round(control.brake, 3),        
+                        'steer': round(control.steer, 3),       
                         'collision': 1 if v.id in collisions_registered else 0
                     })
                 last_record_time = elapsed_time
