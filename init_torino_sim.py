@@ -40,7 +40,7 @@ def main():
 
     sensors = []
     try:
-        tree = ET.parse('torino_traffic.xml')
+        tree = ET.parse('Datasets/torino_traffic.xml')
         root = tree.getroot()
         ns = {'ns': 'https://simone.5t.torino.it/ns/traffic_data.xsd'}
         for fdt in root.findall('ns:FDT_data', ns):
@@ -54,7 +54,7 @@ def main():
                 world.debug.draw_point(wp.transform.location + carla.Location(z=2), 0.2, carla.Color(0,255,0), 500)
     except: pass
 
-    print(f"Simulación iniciada con {len(vehicles_list)} vehículos.")
+    print(f"Init simulation with {len(vehicles_list)} vehicles.")
 
     try:
         while True:
@@ -83,7 +83,7 @@ def main():
             time.sleep(0.1)
 
     except KeyboardInterrupt:
-        print("Limpiando...")
+        print("Cleaning...")
         client.apply_batch([carla.command.DestroyActor(x.id) for x in vehicles_list if x.is_alive])
 
 if __name__ == '__main__':
