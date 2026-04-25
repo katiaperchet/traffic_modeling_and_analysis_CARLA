@@ -11,14 +11,15 @@ This repository is organized as a script-based pipeline:
 5. Run real-time inference on the Baronissi map.
 
 ## Prerequisites
-You need a local Python environment with the libraries used directly by the scripts:
-- `carla`
-- `pandas`
-- `numpy`
-- `matplotlib`
-- `seaborn`
-- `scikit-learn`
-- `joblib`
+You need a local Python environment (using python 3.12) with the libraries used directly by the scripts:
+- `carla` - 0.9.16 - cp312
+- `joblib` == 1.5.3
+- `matplotlib` == 3.10.8
+- `numpy` == 2.3.4
+- `pandas`== 2.3.3
+- `scikit-learn` == 1.8.0
+- `seaborn` == 0.13.2
+
 
 You also need:
 - CARLA Simulator `0.9.16`
