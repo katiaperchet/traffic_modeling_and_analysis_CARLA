@@ -221,4 +221,10 @@ If the goal is only to validate the full thesis workflow quickly:
 2. run `python vehicle_behavior_analysis.py`
 3. see real-time inference alerts. 
 
+## Datasets
+
+[Turin Open Data - Info used for thesis](/Datasets/torino_traffic.xml)
+- Turin Open Data - [Real-time info](https://www.muoversiatorino.it/it/open-data/)
+
+[SCTrans dataset](/Datasets/README_SCTRANS.md)
 
