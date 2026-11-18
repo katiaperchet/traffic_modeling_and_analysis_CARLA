@@ -73,3 +73,11 @@ Plugins/**/Intermediate/*
 
 # Cache files for the editor to use
 DerivedDataCache/*
+/DataCSV/old_data
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+
+# Trained model binaries (large; regenerated via mlmodel_training.py)
+*.pkl
