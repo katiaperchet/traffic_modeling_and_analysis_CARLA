@@ -1,0 +1,12 @@
+--- Real-Time validation log for Baronissi scenario ---
+Timestamp: Fri Apr 24 18:48:14 2026
+Test duration: 1.83 minutes
+----------------------------------------
+Total AI alerts: 51
+Confirmed incidents (TP): 1
+False alarms (FP): 45
+Mean prediction lead time: 1.01 seconds
+Mean Inference Latency: 4.58 ms
+Safety Margin for T=0.5s: 495.42 ms
+Current real-time precision: 1.96%
+----------------------------------------

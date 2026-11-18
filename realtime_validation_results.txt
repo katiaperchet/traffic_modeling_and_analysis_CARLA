@@ -1,0 +1,12 @@
+=== REAL-TIME VALIDATION LOG (BARONISSI) ===
+Timestamp: Tue Apr 21 22:25:08 2026
+Test Duration: 7.12 minutes
+----------------------------------------
+Total AI Alerts Triggered: 482
+Confirmed Incidents (TP): 84
+False Alarms (FP): 391
+Mean Prediction Lead Time: 0.92 seconds
+Mean Inference Latency: 5.39 ms
+Safety Margin for T=0.5s: 494.61 ms
+Current Real-time Precision: 17.43%
+----------------------------------------
